@@ -8,6 +8,8 @@ enum WsEvents {
   MESSAGE_FROM_SERVER = 'message-from-server',
 }
 
+let socket: Socket;
+
 export const connectToServer = (token: string) => {
   const manager = new Manager('http://localhost:3000/socket.io/socket.io.js', {
     extraHeaders: {
@@ -15,12 +17,14 @@ export const connectToServer = (token: string) => {
       authentication: token,
     },
   });
-  const socket = manager.socket('/');
 
-  addListener(socket);
+  socket?.removeAllListeners();
+  socket = manager.socket('/');
+
+  addListener(/* socket */);
 };
 
-const addListener = (socket: Socket) => {
+const addListener = (/* socket: Socket */) => {
   const serverStatusLabel = document.querySelector<HTMLSpanElement>('#server-status')!;
   const clientsUl = document.querySelector<HTMLUListElement>('#clients-ul')!;
   const messagesUl = document.querySelector<HTMLUListElement>('#messages-ul')!;
@@ -37,19 +41,16 @@ const addListener = (socket: Socket) => {
 
   socket.on(WsEvents.CLIENTS_UPDATED, (clients: string[]) => {
     let clientsHtml = '';
-
     clients.forEach((clientId) => {
       clientsHtml += `<li>${clientId}</li>`;
     });
-
+    clientsUl.innerHTML = '';
     clientsUl.innerHTML = clientsHtml;
   });
 
   messageForm.addEventListener('submit', (event) => {
     event.preventDefault();
     if (messageInput.value.trim().length <= 0) return;
-
-    // console.log({ id: 'YO!', message: messageInput.value });
     socket.emit(WsEvents.MESSAGE_FROM_CLIENT, { id: 'YO!', message: messageInput.value });
     messageInput.value = '';
   });
@@ -63,7 +64,6 @@ const addListener = (socket: Socket) => {
     `;
     const li = document.createElement('li');
     li.innerHTML = newMessage;
-    console.log(li.innerHTML);
     messagesUl.append(li);
   });
 };
